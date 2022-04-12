@@ -1,13 +1,13 @@
 public class Card {
 	private int atk;
 	private int hp;
-	private Champions.cardClass cardClass;
+	private Champion champion;
 	private boolean player;
 	private boolean nexus;
-	public Card(int atk, int hp, Champions.cardClass cardClass, boolean player) {
+	public Card(int atk, int hp, Champion.Class cardClass, boolean player) {
 		this.atk = atk;
 		this.hp = hp;
-		this.cardClass = cardClass;
+		this.champion = new Champion(cardClass);
 		this.player = player;
 		this.nexus = false;
 	}
@@ -16,9 +16,6 @@ public class Card {
 	}
 	public void setHp(int hp) {
 		this.hp = hp;
-	}
-	public void setCardClass(Champions.cardClass cardClass) {
-		this.cardClass = cardClass;
 	}
 	public void getDamage(int damage) {
 		this.hp = this.hp - damage;
@@ -32,28 +29,14 @@ public class Card {
 	public int getHp() {
 		return this.hp;
 	}
-	public Champions.cardClass getCardClass() {
-		return this.cardClass;
+	public Champion getCardClass() {
+		return this.champion;
 	}
 	public String getName() {
-		switch(this.cardClass) {
-		case NEXUS:
-			return "Nexus";
-		case WARRIOR:
-			return "Warrior";
-		case TANK:
-			return "Tank";
-		case ARCHER:
-			return "Archer";
-		case KNIGHT:
-			return "Knight";
-		case JUMPKING:
-			return "Jumpking";
-		case BOMBER:
-			return "Bomber";
-		default:
-			return "None";
-		}
+		return this.champion.getName();
+	}
+	public boolean isMovable(int atkRow, int atkCol, int hitRow, int hitCol) {
+		return this.champion.isMovable(atkRow, atkCol, hitRow, hitCol);
 	}
 	public boolean isPlayerCard() {
 		return player;

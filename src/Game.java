@@ -80,8 +80,8 @@ public class Game extends Thread {
 	}
 	
 	public void nexusInit() {
-		Card myNexus = new Card(0, initialHp, Champions.cardClass.NEXUS, true);
-		Card enemyNexus = new Card(0, initialHp, Champions.cardClass.NEXUS, false);
+		Card myNexus = new Card(0, initialHp, Champion.Class.NEXUS, true);
+		Card enemyNexus = new Card(0, initialHp, Champion.Class.NEXUS, false);
 		myNexus.setNexus();
 		enemyNexus.setNexus();
 		field.set(2+round-1, 0, myNexus);
@@ -94,8 +94,8 @@ public class Game extends Thread {
 		final int maximum = 90; // max is minimum + maximum
 		Random random = new Random();
 		for(int i=0; i<CARDNUM; ++i) {
-			myDeck.putItem(new Card(minimum + random.nextInt(maximum), minimum + random.nextInt(maximum), Champions.cardClass.WARRIOR, true));
-			enemyDeck.putItem(new Card(minimum + random.nextInt(maximum), minimum + random.nextInt(maximum), Champions.cardClass.WARRIOR, false));
+			myDeck.putItem(new Card(minimum + random.nextInt(maximum), minimum + random.nextInt(maximum), Champion.Class.KNIGHT, true));
+			enemyDeck.putItem(new Card(minimum + random.nextInt(maximum), minimum + random.nextInt(maximum), Champion.Class.WARRIOR, false));
 		}
 		
 	}
@@ -157,5 +157,8 @@ public class Game extends Thread {
 		else {
 			return String.format("Round %d : Opponent's Turn", round);
 		}
+	}
+	public boolean isFirstPosition(int row, int col) {
+		return (row == round && col == 0) || (row == round+1 && col == 1);
 	}
 }

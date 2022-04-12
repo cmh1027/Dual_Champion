@@ -110,19 +110,23 @@ public class FieldPanel extends JPanel{
         	 int selectedCol = parentPanel.selectedCol;
         	 if(game.isPlayerTurn()) {
             	 Card card = game.field.get(this.row, this.col);
+            	 Card selectedCard = game.field.get(selectedRow, selectedCol);
             	 if(parentPanel.selected){
-            		 if(selectedRow == this.row && selectedCol == this.col) {
+            		 if(selectedRow == this.row && selectedCol == this.col) { // unselect
             			 self.unselect();
             		 }
             		 else {
-            			 if(card == null) { // move
-            				 parentPanel.cells.get(selectedRow, selectedCol).unselect();
-            				 game.move(selectedRow, selectedCol, this.row, this.col);
-            				 parentPanel.updateCell(selectedRow, selectedCol);
-            				 parentPanel.updateCell(this.row, this.col);
+            			 if(card == null) {
+            				 if(selectedCard.isMovable(selectedRow, selectedCol, this.row, this.col)) { // move
+            					 parentPanel.cells.get(selectedRow, selectedCol).unselect();
+                				 game.move(selectedRow, selectedCol, this.row, this.col);
+                				 parentPanel.updateCell(selectedRow, selectedCol);
+                				 parentPanel.updateCell(this.row, this.col); 
+            				 }
             			 }
             			 else {
-            				 if(game.isAttackable(selectedRow, selectedCol, this.row, this.col)) {
+            				 // attack
+            				 if(!card.isPlayerCard() && selectedCard.isPlayerCard() && selectedCard.isMovable(selectedRow, selectedCol, this.row, this.col)) {
             					 game.attack(selectedRow, selectedCol, this.row, this.col);
                 				 parentPanel.updateCell(selectedRow, selectedCol);
                 				 parentPanel.updateCell(this.row, this.col);
@@ -131,8 +135,8 @@ public class FieldPanel extends JPanel{
             		 }
             	 }
             	 else {
-            		 int selectedCardIndex = parentPanel.parentFrame.getSelectedCard();
-            		 if(selectedCardIndex == -1) { // No card is selected
+            		 int selectedDeckCardIndex = parentPanel.parentFrame.getSelectedCard();
+            		 if(selectedDeckCardIndex == -1) { // No card is selected
                 		 if(card != null && !card.isNexus() && card.isPlayerCard()) { // Player Card exists
                 			 self.select();
                 		 }
@@ -141,10 +145,10 @@ public class FieldPanel extends JPanel{
                 		 }
             		 }
             		 else {
-            			 if(card == null) { // put card on the field
-            				 game.putCard(row, col, selectedCardIndex, true);
+            			 if(card == null && game.isFirstPosition(row, col)) { // put card on the field
+            				 game.putCard(row, col, selectedDeckCardIndex, true);
             				 parentPanel.updateCell(row, col);
-            				 parentPanel.parentFrame.updateDeckTable(selectedCardIndex);
+            				 parentPanel.parentFrame.updateDeckTable(selectedDeckCardIndex);
             			 }
             		 }
             	 }
