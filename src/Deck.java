@@ -21,11 +21,13 @@ public class Deck {
 	public int size() {
 		return deck.size();
 	}
+	
 	public Card getItem(int index) {
 		Card card = deck.get(index);
 		deck.remove(index);
 		return card;
 	}
+	
 	public void putItem(Card card) {
 		deck.add(card);
 	}

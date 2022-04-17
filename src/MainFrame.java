@@ -24,6 +24,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 public class MainFrame extends JFrame{
 	private FieldPanel fieldPanel;
@@ -42,6 +44,16 @@ public class MainFrame extends JFrame{
         public void mouseClicked(MouseEvent e) {
     		this.deckTable.clearSelection(); // deselect a card in the deck when the frame is clicked
         }
+	}
+	public static class DeckTableSelectionListener implements ListSelectionListener {
+		private MainFrame parent;
+		DeckTableSelectionListener(MainFrame parent){
+			this.parent = parent;
+		}
+	    @Override
+	    public void valueChanged(ListSelectionEvent event) {
+	    	this.parent.fieldPanel.unselectCurrentCell();
+	    }
 	}
 	public MainFrame() {
 		super("Dual Champion");
@@ -72,7 +84,8 @@ public class MainFrame extends JFrame{
         	tcmSchedule.getColumn(i).setCellRenderer(tScheduleCellRenderer);
         }
         this.add(jscp1);
-        this.addMouseListener(new FrameMouseAdapter(this.deckTable)); 
+        this.addMouseListener(new FrameMouseAdapter(this.deckTable));
+        this.deckTable.getSelectionModel().addListSelectionListener(new DeckTableSelectionListener(this));
         ////////////////////////////////////////////////////////
         displayBoard = new JLabel();
         displayBoard.setSize(500, 30);

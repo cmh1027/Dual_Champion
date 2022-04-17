@@ -9,6 +9,7 @@
 
 import java.lang.Math;
 public class Champion {
+	
 	public static enum Class{
 		NEXUS(0), WARRIOR(1), TANK(2), ARCHER(3), KNIGHT(4), JUMPKING(5), BOMBER(6);
 		private final int index;

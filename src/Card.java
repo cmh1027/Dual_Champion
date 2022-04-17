@@ -10,7 +10,6 @@ public class Card {
 		this.hp = Champion.HP[cardClass.getIndex()];
 		this.player = player;
 		this.nexus = cardClass == Champion.Class.NEXUS;
-		
 	}
 	public void setAtk(int atk) {
 		this.atk = atk;
@@ -21,7 +20,7 @@ public class Card {
 	public void getDamage(int damage) {
 		this.hp = this.hp - damage;
 	}
-	public Boolean isDead() {
+	public boolean isDead() {
 		return this.hp <= 0;
 	}
 	public int getAtk() {

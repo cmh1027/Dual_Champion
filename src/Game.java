@@ -70,8 +70,6 @@ public class Game extends Thread {
 	public void init() {
 		myHp = Champion.HP[Champion.Class.NEXUS.getIndex()];
 		enemyHp = Champion.HP[Champion.Class.NEXUS.getIndex()];
-		myDeck.empty();
-		enemyDeck.empty();
 		field.init(2+round, 2+round);
 		turnCount = 1;
 		this.deckInit();
@@ -105,6 +103,8 @@ public class Game extends Thread {
 	}
 	
 	public void deckInit() {
+		myDeck.empty();
+		enemyDeck.empty();
 		// WARRIOR, TANK, ARCHER, KNIGHT, JUMPKING, BOMBER
 		this.putDeckCard(Champion.Class.WARRIOR, true);
 		this.putDeckCard(Champion.Class.TANK, true);
@@ -118,6 +118,7 @@ public class Game extends Thread {
 		this.putDeckCard(Champion.Class.KNIGHT, false);
 		this.putDeckCard(Champion.Class.JUMPKING, false);
 		this.putDeckCard(Champion.Class.BOMBER, false);
+		
 	}
 
 	public void attack(int atkRow, int atkCol, int hitRow, int hitCol) {

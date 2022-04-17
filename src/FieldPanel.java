@@ -237,5 +237,11 @@ public class FieldPanel extends JPanel{
 			}
 		}
 	}
+	
+	public void unselectCurrentCell() {
+		Cell cell = this.cells.get(this.selectedRow, this.selectedCol);
+		cell.unselect();
+		this.selected = false;
+	}
 
 }
