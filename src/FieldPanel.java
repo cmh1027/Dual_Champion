@@ -133,6 +133,7 @@ public class FieldPanel extends JPanel{
             			 else {
             				 // attack
             				 if(!card.isPlayerCard() && selectedCard.isPlayerCard() && selectedCard.isMovable(selectedRow, selectedCol, this.row, this.col)) {
+            					 parentPanel.cells.get(selectedRow, selectedCol).unselect();
             					 game.attack(selectedRow, selectedCol, this.row, this.col);
                 				 parentPanel.updateCell(selectedRow, selectedCol);
                 				 parentPanel.updateCell(this.row, this.col);
@@ -223,18 +224,16 @@ public class FieldPanel extends JPanel{
 			if(!card.isNexus()) {
 				String info = String.format("<html>%s<br/>ATK : %d<br/>HP : %d</html>", card.getName(), card.getAtk(), card.getHp());
 				cell.setInfo(info);
+				if(card.isPlayerCard()) {
+					cell.setColor(CellColor.PLAYER);
+				}
+				else {
+					cell.setColor(CellColor.OPONENT);
+				}
 			}
 			else {
-				String info = String.format("<html>%s<br/>HP : %d</html>", card.getName(), card.getAtk(), card.getHp());
+				String info = String.format("<html>%s<br/>HP : %d</html>", card.getName(), card.getHp());
 				cell.setInfo(info, Color.white);
-			}
-			
-			
-			if(card.isPlayerCard()) {
-				cell.setColor(CellColor.PLAYER);
-			}
-			else {
-				cell.setColor(CellColor.OPONENT);
 			}
 		}
 	}
