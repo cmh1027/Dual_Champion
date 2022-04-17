@@ -6,12 +6,12 @@ public class Game extends Thread {
 	public int round;
 	private int myHp, enemyHp;
 	private int turnCount;
+	private int myCardCount, enemyCardCount;
 	public Field field;
 	public MainFrame parentFrame;
 	public boolean myTurn;
 	public volatile boolean waiting;
-	private final int initialHp = 30;
-	private final int MAXROUND = 1;
+	private final int MAXROUND = 7;
 
 	public Game(MainFrame parent){
 		myDeck = new Deck();
@@ -31,15 +31,15 @@ public class Game extends Thread {
 		for(round=1; round<=MAXROUND; ++round) {
 			this.init();
 			this.myTurn = true; // Player is first
-			while(myHp > 0 && enemyHp > 0) {
+			while(myHp > 0 && enemyHp > 0 && !haveNoCard(true) && !haveNoCard(false)) {
 				this.turn();
 			}
-			if(myHp <= 0) {
+			if(myHp <= 0 || haveNoCard(true)) {
 				lose();
 			}
 			else {
 				win();
-			}	
+			}
 		}
 	}
 
@@ -68,8 +68,8 @@ public class Game extends Thread {
 	}
 	
 	public void init() {
-		myHp = initialHp;
-		enemyHp = initialHp;
+		myHp = Champion.HP[Champion.Class.NEXUS.getIndex()];
+		enemyHp = Champion.HP[Champion.Class.NEXUS.getIndex()];
 		myDeck.empty();
 		enemyDeck.empty();
 		field.init(2+round, 2+round);
@@ -80,24 +80,44 @@ public class Game extends Thread {
 	}
 	
 	public void nexusInit() {
-		Card myNexus = new Card(0, initialHp, Champion.Class.NEXUS, true);
-		Card enemyNexus = new Card(0, initialHp, Champion.Class.NEXUS, false);
-		myNexus.setNexus();
-		enemyNexus.setNexus();
+		Card myNexus = new Card(Champion.Class.NEXUS, true);
+		Card enemyNexus = new Card(Champion.Class.NEXUS, false);
 		field.set(2+round-1, 0, myNexus);
 		field.set(0, 2+round-1, enemyNexus);
 	}
 	
-	public void deckInit() {
-		final int CARDNUM = 10;
-		final int minimum = 10;
-		final int maximum = 90; // max is minimum + maximum
-		Random random = new Random();
-		for(int i=0; i<CARDNUM; ++i) {
-			myDeck.putItem(new Card(minimum + random.nextInt(maximum), minimum + random.nextInt(maximum), Champion.Class.KNIGHT, true));
-			enemyDeck.putItem(new Card(minimum + random.nextInt(maximum), minimum + random.nextInt(maximum), Champion.Class.WARRIOR, false));
+	public void putDeckCard(Champion.Class cardClass, boolean isPlayer) {
+		if(isPlayer) {
+			this.myCardCount += 1;
+			myDeck.putItem(new Card(cardClass, true));
 		}
-		
+		else {
+			this.enemyCardCount += 1;
+			enemyDeck.putItem(new Card(cardClass, false));
+		}
+	}
+	
+	public boolean haveNoCard(boolean isPlayer) {
+		if(isPlayer)
+			return this.myCardCount == 0;
+		else
+			return this.enemyCardCount == 0;
+	}
+	
+	public void deckInit() {
+		// WARRIOR, TANK, ARCHER, KNIGHT, JUMPKING, BOMBER
+		this.putDeckCard(Champion.Class.WARRIOR, true);
+		this.putDeckCard(Champion.Class.TANK, true);
+		this.putDeckCard(Champion.Class.ARCHER, true);
+		this.putDeckCard(Champion.Class.KNIGHT, true);
+		this.putDeckCard(Champion.Class.JUMPKING, true);
+		this.putDeckCard(Champion.Class.BOMBER, true);
+		this.putDeckCard(Champion.Class.WARRIOR, false);
+		this.putDeckCard(Champion.Class.TANK, false);
+		this.putDeckCard(Champion.Class.ARCHER, false);
+		this.putDeckCard(Champion.Class.KNIGHT, false);
+		this.putDeckCard(Champion.Class.JUMPKING, false);
+		this.putDeckCard(Champion.Class.BOMBER, false);
 	}
 
 	public void attack(int atkRow, int atkCol, int hitRow, int hitCol) {
@@ -105,14 +125,18 @@ public class Game extends Thread {
 		Card hitCard = field.get(hitRow, hitCol);
 		hitCard.getDamage(attackCard.getAtk());
 		if(hitCard.isNexus()) {
-			if(myTurn) {
-				enemyHp = enemyHp - attackCard.getAtk();
+			if(this.myTurn) {
+				this.enemyHp = this.enemyHp - attackCard.getAtk();
 			}
 			else {
-				myHp = myHp - attackCard.getAtk();
+				this.myHp = this.myHp - attackCard.getAtk();
 			}
 		}
 		if(hitCard.isDead()) {
+			if(this.myTurn)
+				this.enemyCardCount -= 1;
+			else
+				this.myCardCount -= 1;
 			field.remove(hitRow, hitCol);
 		}
 		this.turnEnd();

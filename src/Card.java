@@ -4,12 +4,13 @@ public class Card {
 	private Champion champion;
 	private boolean player;
 	private boolean nexus;
-	public Card(int atk, int hp, Champion.Class cardClass, boolean player) {
-		this.atk = atk;
-		this.hp = hp;
+	public Card(Champion.Class cardClass, boolean player) {
 		this.champion = new Champion(cardClass);
+		this.atk = Champion.ATK[cardClass.getIndex()];
+		this.hp = Champion.HP[cardClass.getIndex()];
 		this.player = player;
-		this.nexus = false;
+		this.nexus = cardClass == Champion.Class.NEXUS;
+		
 	}
 	public void setAtk(int atk) {
 		this.atk = atk;
@@ -40,9 +41,6 @@ public class Card {
 	}
 	public boolean isPlayerCard() {
 		return player;
-	}
-	public void setNexus() {
-		this.nexus = true;
 	}
 	public boolean isNexus() {
 		return nexus;

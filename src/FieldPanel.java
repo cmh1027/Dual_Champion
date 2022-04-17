@@ -56,18 +56,18 @@ public class FieldPanel extends JPanel{
 			this.addMouseListener(new CellMouseAdapter(parentPanel, this, row, col));
 			this.setLayout(new GridBagLayout());
 			this.cardInfo = new JLabel();
-			this.cardInfo.setFont(new Font(this.cardInfo.getFont().getName(), Font.BOLD, 20));
+			this.cardInfo.setFont(new Font(this.cardInfo.getFont().getName(), this.cardInfo.getFont().getStyle(), 20));
 			this.add(this.cardInfo);
 		}
-		public void changeInfo(String info) {
+		public void setInfo(String info) {
 			this.cardInfo.setText(info);
 		}
-		public void changeInfo(String info, Color color) {
-			this.changeInfo(info);
+		public void setInfo(String info, Color color) {
+			this.setInfo(info);
 			this.cardInfo.setForeground(color);
 			
 		}
-		public void changeColor(CellColor color) {
+		public void setColor(CellColor color) {
 			switch(color) {
 			case EMPTY:
 				this.setBackground(Color.white);
@@ -80,6 +80,11 @@ public class FieldPanel extends JPanel{
 				break;
 			}
 		}
+		
+		public void setFontSize(int size) {
+			this.cardInfo.setFont(new Font(this.cardInfo.getFont().getName(), this.cardInfo.getFont().getStyle(), size));
+		}
+		
 		public void select() {
 			this.setBorder(BorderFactory.createLineBorder(Color.black, 5));
 	   		this.parentPanel.selected = true;
@@ -90,6 +95,7 @@ public class FieldPanel extends JPanel{
 			this.setBorder(BorderFactory.createEmptyBorder());
 			this.parentPanel.selected = false;
 		}
+		
 	}
 	
 	public static class CellMouseAdapter extends MouseAdapter{
@@ -183,14 +189,15 @@ public class FieldPanel extends JPanel{
 			for(int j=0; j<round+2; ++j) {
 				Cell cell = new Cell(this, i, j);
 				Card card = this.game.field.get(i, j);
+				cell.setFontSize(22 - 2 * round);
 				if(card != null && card.isNexus()) {
 					if(card.isPlayerCard()) {
 						cell.setBackground(Color.blue);
-						cell.changeInfo(String.format("<html>Nexus<br/>HP : %d</html>", game.getMyHp()), Color.white);
+						cell.setInfo(String.format("<html>Nexus<br/>HP : %d</html>", game.getMyHp()), Color.white);
 					}
 					else {
 						cell.setBackground(Color.red);
-						cell.changeInfo(String.format("<html>Nexus<br/>HP : %d</html>", game.getEnemyHp()), Color.white);
+						cell.setInfo(String.format("<html>Nexus<br/>HP : %d</html>", game.getEnemyHp()), Color.white);
 					}
 				}
 				else {
@@ -209,25 +216,25 @@ public class FieldPanel extends JPanel{
 		Card card = this.game.field.get(row, col);
 		Cell cell = this.cells.get(row, col);
 		if(card == null) {
-			cell.changeColor(CellColor.EMPTY);
-			cell.changeInfo("");
+			cell.setColor(CellColor.EMPTY);
+			cell.setInfo("");
 		}
 		else {
 			if(!card.isNexus()) {
 				String info = String.format("<html>%s<br/>ATK : %d<br/>HP : %d</html>", card.getName(), card.getAtk(), card.getHp());
-				cell.changeInfo(info);
+				cell.setInfo(info);
 			}
 			else {
 				String info = String.format("<html>%s<br/>HP : %d</html>", card.getName(), card.getAtk(), card.getHp());
-				cell.changeInfo(info, Color.white);
+				cell.setInfo(info, Color.white);
 			}
 			
 			
 			if(card.isPlayerCard()) {
-				cell.changeColor(CellColor.PLAYER);
+				cell.setColor(CellColor.PLAYER);
 			}
 			else {
-				cell.changeColor(CellColor.OPONENT);
+				cell.setColor(CellColor.OPONENT);
 			}
 		}
 	}
