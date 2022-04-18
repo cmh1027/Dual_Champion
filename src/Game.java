@@ -260,7 +260,7 @@ public class Game extends Thread {
 	}
 	
 	public String toString() {
-		if(myTurn) {
+		if(this.myTurn) {
 			return String.format("Round %d : My Turn", round);
 		}
 		else {
