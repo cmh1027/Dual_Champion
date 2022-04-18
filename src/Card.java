@@ -19,6 +19,7 @@ public class Card {
 	}
 	public void getDamage(int damage) {
 		this.hp = this.hp - damage;
+		this.hp = this.hp >= 0 ? this.hp : 0;
 	}
 	public boolean isDead() {
 		return this.hp <= 0;
@@ -29,8 +30,8 @@ public class Card {
 	public int getHp() {
 		return this.hp;
 	}
-	public Champion getCardClass() {
-		return this.champion;
+	public Champion.Class getCardClass() {
+		return this.champion.getCardClass();
 	}
 	public String getName() {
 		return this.champion.getName();

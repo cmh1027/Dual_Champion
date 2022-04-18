@@ -1,24 +1,25 @@
-import java.util.Random;
-import java.util.ArrayList;
-
 public class Game extends Thread {
 	public Deck myDeck, enemyDeck;
 	public int round;
 	private int myHp, enemyHp;
 	private int turnCount;
 	private int myCardCount, enemyCardCount;
+	private AI ai;
 	public Field field;
 	public MainFrame parentFrame;
+	public FieldPanel fieldPanel;
 	public boolean myTurn;
 	public volatile boolean waiting;
 	private final int MAXROUND = 7;
 
-	public Game(MainFrame parent){
+	public Game(MainFrame parent, FieldPanel panel){
 		myDeck = new Deck();
 		enemyDeck = new Deck();
 		field = new Field();
+		ai = new AI(this, field, enemyDeck);
 		waiting = false;
 		parentFrame = parent;
+		fieldPanel = panel;
 	}
 	public int getMyHp() {
 		return this.myHp;
@@ -41,6 +42,7 @@ public class Game extends Thread {
 				win();
 			}
 		}
+		this.parentFrame.gameEnded();
 	}
 
 	public void turn(){
@@ -53,12 +55,19 @@ public class Game extends Thread {
 		}
 		else {
 			parentFrame.updateDisplay(String.format("Round %d-%d / Opponent's Turn", this.round, this.turnCount));
-			System.out.println("Opponent's turn");
+			try {
+				Thread.sleep(1000);
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+			}
+			ai.nextAction();
 		}
 		this.myTurn = !this.myTurn;
 		this.turnCount++;
 	}
 	
+
 	public void turnEnd() {
 		this.waiting = false;
 	}
@@ -75,6 +84,7 @@ public class Game extends Thread {
 		this.deckInit();
 		this.nexusInit();
 		this.parentFrame.updateInit();
+		this.ai.init();
 	}
 	
 	public void nexusInit() {
@@ -94,6 +104,19 @@ public class Game extends Thread {
 			enemyDeck.putItem(new Card(cardClass, false));
 		}
 	}
+
+	public void putDeckCard(Champion.Class cardClass, boolean isPlayer, int count) {
+		for(int i=0; i<count; ++i) {
+			if(isPlayer) {
+				this.myCardCount += 1;
+				myDeck.putItem(new Card(cardClass, true));
+			}
+			else {
+				this.enemyCardCount += 1;
+				enemyDeck.putItem(new Card(cardClass, false));
+			}			
+		}
+	}
 	
 	public boolean haveNoCard(boolean isPlayer) {
 		if(isPlayer)
@@ -106,14 +129,14 @@ public class Game extends Thread {
 		myDeck.empty();
 		enemyDeck.empty();
 		// WARRIOR, TANK, ARCHER, KNIGHT, JUMPKING, BOMBER
-		this.putDeckCard(Champion.Class.WARRIOR, true);
-		this.putDeckCard(Champion.Class.TANK, true);
+		this.putDeckCard(Champion.Class.WARRIOR, true, 2);
+		this.putDeckCard(Champion.Class.TANK, true, 2);
 		this.putDeckCard(Champion.Class.ARCHER, true);
 		this.putDeckCard(Champion.Class.KNIGHT, true);
 		this.putDeckCard(Champion.Class.JUMPKING, true);
 		this.putDeckCard(Champion.Class.BOMBER, true);
-		this.putDeckCard(Champion.Class.WARRIOR, false);
-		this.putDeckCard(Champion.Class.TANK, false);
+		this.putDeckCard(Champion.Class.WARRIOR, false, 2);
+		this.putDeckCard(Champion.Class.TANK, false, 2);
 		this.putDeckCard(Champion.Class.ARCHER, false);
 		this.putDeckCard(Champion.Class.KNIGHT, false);
 		this.putDeckCard(Champion.Class.JUMPKING, false);
@@ -126,53 +149,114 @@ public class Game extends Thread {
 		Card hitCard = field.get(hitRow, hitCol);
 		hitCard.getDamage(attackCard.getAtk());
 		if(hitCard.isNexus()) {
-			if(this.myTurn) {
-				this.enemyHp = this.enemyHp - attackCard.getAtk();
-			}
-			else {
+			if(hitCard.isPlayerCard()) {
 				this.myHp = this.myHp - attackCard.getAtk();
 			}
+			else {
+				this.enemyHp = this.enemyHp - attackCard.getAtk();
+			}
 		}
-		if(hitCard.isDead()) {
-			if(this.myTurn)
-				this.enemyCardCount -= 1;
-			else
-				this.myCardCount -= 1;
-			field.remove(hitRow, hitCol);
+		else {
+			if(hitCard.isDead()) {
+				if(hitCard.isPlayerCard()) {
+					this.myCardCount -= 1;
+				}
+				else {
+					this.enemyCardCount -= 1;
+					this.ai.removeFieldCard(hitRow, hitCol);
+				}
+				if(hitCard.getCardClass() == Champion.Class.BOMBER) {
+					this.bomberSuicide(hitRow, hitCol);
+				}
+				field.remove(hitRow, hitCol);
+				if(attackCard.getCardClass() == Champion.Class.JUMPKING && !attackCard.isDead()) {
+					this.move(atkRow, atkCol, hitRow, hitCol);
+				}
+			}
+			else {
+				if(attackCard.getCardClass() == Champion.Class.JUMPKING) {
+					if(attackCard.isPlayerCard()) {
+						this.myCardCount -= 1;
+					}
+					else {
+						this.enemyCardCount -= 1;
+						this.ai.removeFieldCard(hitRow, hitCol);					
+					}
+					field.remove(atkRow, atkCol);
+				}
+			}			
 		}
+		this.fieldPanel.updateCell(atkRow, atkCol);
+		this.fieldPanel.updateCell(hitRow, hitCol);
 		this.turnEnd();
 	}
-
-	public boolean isAttackable(int atkRow, int atkCol, int hitRow, int hitCol) {
-		Card attackCard = field.get(atkRow, atkCol);
-		Card hitCard = field.get(hitRow, hitCol);
-		return attackCard.isPlayerCard() && !hitCard.isPlayerCard();
-	}
-	
 
 	public void move(int srcRow, int srcCol, int dstRow, int dstCol) {
 		Card card = field.get(srcRow, srcCol);
 		field.set(dstRow, dstCol, card);
 		field.remove(srcRow, srcCol);
+		this.fieldPanel.updateCell(srcRow, srcCol);
+		this.fieldPanel.updateCell(dstRow, dstCol);
 		this.turnEnd();
+	}
+	
+	public void bomberSuicide(int row, int col) {
+		Card attackCard = field.get(row, col);
+		Card hitCard;
+		for(int i=-1; i<=1; i=i+2) {
+			if(this.isValidCoord(row+i, col) && (hitCard = field.get(row+i, col)) != null) {
+				this.attack(row, col, row+i, col);
+			}
+		}
+		for(int i=-1; i<=1; i=i+2) {
+			if(this.isValidCoord(row, col+i) && (hitCard = field.get(row, col+i)) != null) {
+				hitCard.getDamage(attackCard.getAtk());
+				this.attack(row, col, row, col+i);	
+			}
+		}
+	}
+
+	public boolean isEnemy(int atkRow, int atkCol, int hitRow, int hitCol) {
+		Card attackCard = field.get(atkRow, atkCol);
+		Card hitCard = field.get(hitRow, hitCol);
+		return attackCard.isPlayerCard() && !hitCard.isPlayerCard() || !attackCard.isPlayerCard() && hitCard.isPlayerCard();
+	}
+	
+	public boolean isValidCoord(int row, int col) {
+		return row >= 0 && col >= 0 && row <= this.round + 1 && col <= this.round + 1;
 	}
 
 	public void putCard(int row, int col, int cardIndex, boolean isPlayer) {
 		Card card;
 		if(isPlayer)
 			card = this.myDeck.pop(cardIndex);
-		else
+		else {
 			card = this.enemyDeck.pop(cardIndex);
+			this.ai.addFieldCard(row, col);
+		}
 		this.field.set(row, col, card);
+		this.fieldPanel.updateCell(row, col);
 		this.turnEnd();
 	}
 	
 
 	public void win() {
-		System.out.println("You win");
+		parentFrame.updateDisplay("You Win! Ready for the next battle");
+		try {
+			Thread.sleep(3000);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 	public void lose() {
-		System.out.println("You lose");
+		parentFrame.updateDisplay("You Lose! Ready for the next battle");
+		try {
+			Thread.sleep(3000);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public String toString() {

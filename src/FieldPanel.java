@@ -126,8 +126,6 @@ public class FieldPanel extends JPanel{
             				 if(selectedCard.isMovable(selectedRow, selectedCol, this.row, this.col)) { // move
             					 parentPanel.cells.get(selectedRow, selectedCol).unselect();
                 				 game.move(selectedRow, selectedCol, this.row, this.col);
-                				 parentPanel.updateCell(selectedRow, selectedCol);
-                				 parentPanel.updateCell(this.row, this.col); 
             				 }
             			 }
             			 else {
@@ -135,8 +133,6 @@ public class FieldPanel extends JPanel{
             				 if(!card.isPlayerCard() && selectedCard.isPlayerCard() && selectedCard.isMovable(selectedRow, selectedCol, this.row, this.col)) {
             					 parentPanel.cells.get(selectedRow, selectedCol).unselect();
             					 game.attack(selectedRow, selectedCol, this.row, this.col);
-                				 parentPanel.updateCell(selectedRow, selectedCol);
-                				 parentPanel.updateCell(this.row, this.col);
             				 }
             			 }
             		 }
@@ -154,7 +150,6 @@ public class FieldPanel extends JPanel{
             		 else {
             			 if(card == null && game.isFirstPosition(row, col)) { // put card on the field
             				 game.putCard(row, col, selectedDeckCardIndex, true);
-            				 parentPanel.updateCell(row, col);
             				 parentPanel.parentFrame.updateDeckTable(selectedDeckCardIndex);
             			 }
             		 }

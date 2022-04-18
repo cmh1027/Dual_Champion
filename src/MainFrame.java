@@ -68,7 +68,7 @@ public class MainFrame extends JFrame{
         this.add(fieldPanel);
         fieldPanel.defaultUpdate();
         ////////////////////////////////////////////////////////
-        String header[]={"Card", "hp", "atk"};
+        String header[]={"Card", "HP", "ATK"};
         String contents[][]={};
         deckTableModel = new DefaultTableModel(contents, header);
         deckTable = new JTable(deckTableModel);
@@ -104,6 +104,7 @@ public class MainFrame extends JFrame{
         	@Override
         	public void actionPerformed(ActionEvent e) {
         		game.start();
+        		startButton.setEnabled(false);
         	}
         });
         this.add(startButton);
@@ -121,7 +122,7 @@ public class MainFrame extends JFrame{
         this.add(quitButton);
         ////////////////////////////////////////////////////////
         this.setVisible(true);
-		game = new Game(this);
+		game = new Game(this, this.fieldPanel);
 		game.parentFrame = this; // connect frame and game instance
 		fieldPanel.game = game;
      
@@ -153,5 +154,8 @@ public class MainFrame extends JFrame{
 			return -1;
 		else
 			return this.deckTable.getSelectedRow();
+	}
+	public void gameEnded() {
+		this.startButton.setEnabled(true);
 	}
 }
