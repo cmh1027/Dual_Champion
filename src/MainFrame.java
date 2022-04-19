@@ -22,6 +22,7 @@ import java.awt.event.MouseListener;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.event.ListSelectionEvent;
@@ -32,7 +33,9 @@ public class MainFrame extends JFrame{
 	private JTable deckTable; 
 	private DefaultTableModel deckTableModel;
 	private JLabel displayBoard;
-	private JButton startButton;
+	private JTextArea cardExplainArea;
+	private JButton startAIButton;
+	private JButton startPlayerButton;
 	private JButton quitButton;
 	private Game game;
 	public static class FrameMouseAdapter extends MouseAdapter{
@@ -47,13 +50,44 @@ public class MainFrame extends JFrame{
 	}
 	public static class DeckTableSelectionListener implements ListSelectionListener {
 		private MainFrame parent;
+		private JTable self; 
 		DeckTableSelectionListener(MainFrame parent){
 			this.parent = parent;
+			this.self = parent.deckTable;
 		}
 	    @Override
 	    public void valueChanged(ListSelectionEvent event) {
 	    	this.parent.fieldPanel.unselectCurrentCell();
+	    	int selectedIndex = self.getSelectedRow();
+	    	if(selectedIndex != -1) {
+		    	if(parent.game.isPlayerTurn()) {
+		    		parent.printCardInfo(parent.game.myDeck.at(selectedIndex).getCardInfo());
+		    	}
+		    	else {
+		    		
+		    	}	    		
+	    	}
+	    	else {
+	    		parent.printCardInfo("");
+	    	}
 	    }
+	}
+	public static class StartButtonListener implements ActionListener{
+		private MainFrame parent;
+		boolean withPlayer;
+		public StartButtonListener(MainFrame parent, boolean withPlayer) {
+			this.parent = parent;
+			this.withPlayer = withPlayer;
+		}
+    	@Override
+    	public void actionPerformed(ActionEvent e) {
+    		Game game = new Game(parent, parent.fieldPanel, this.withPlayer);
+    		parent.game = game;
+    		parent.fieldPanel.game = game;
+    		game.start();
+    		parent.startAIButton.setEnabled(false);
+    		parent.startPlayerButton.setEnabled(false);
+    	}
 	}
 	public MainFrame() {
 		super("Dual Champion");
@@ -76,7 +110,7 @@ public class MainFrame extends JFrame{
         deckTable.setRowHeight(30);
         deckTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         jscp1.setLocation(580, 150);
-        jscp1.setSize(190, 450);
+        jscp1.setSize(190, 400);
         DefaultTableCellRenderer tScheduleCellRenderer = new DefaultTableCellRenderer();
         tScheduleCellRenderer.setHorizontalAlignment(SwingConstants.CENTER);
         TableColumnModel tcmSchedule = deckTable.getColumnModel();
@@ -87,6 +121,18 @@ public class MainFrame extends JFrame{
         this.addMouseListener(new FrameMouseAdapter(this.deckTable));
         this.deckTable.getSelectionModel().addListSelectionListener(new DeckTableSelectionListener(this));
         ////////////////////////////////////////////////////////
+        cardExplainArea = new JTextArea();
+        cardExplainArea.setSize(190, 70);
+        cardExplainArea.setLocation(580, 560);
+        cardExplainArea.setBackground(Color.white);
+        cardExplainArea.setFont(new Font(cardExplainArea.getFont().getName(), Font.PLAIN, 11));
+        cardExplainArea.setOpaque(true);
+        cardExplainArea.setEnabled(false);
+        cardExplainArea.setDisabledTextColor(Color.black);
+        cardExplainArea.setLineWrap(true);
+        cardExplainArea.setWrapStyleWord(true);
+        this.add(cardExplainArea);        
+        ////////////////////////////////////////////////////////
         displayBoard = new JLabel();
         displayBoard.setSize(500, 30);
         displayBoard.setLocation(50, 40);
@@ -96,22 +142,23 @@ public class MainFrame extends JFrame{
         displayBoard.setOpaque(true);
         this.add(displayBoard);
         ////////////////////////////////////////////////////////
-        startButton = new JButton("Start");
-        startButton.setSize(130, 30);
-        startButton.setLocation(600, 35);
-        startButton.setFont(new Font(startButton.getFont().getName(), Font.BOLD, 15));
-        startButton.addActionListener(new ActionListener() {
-        	@Override
-        	public void actionPerformed(ActionEvent e) {
-        		game.start();
-        		startButton.setEnabled(false);
-        	}
-        });
-        this.add(startButton);
+        startAIButton = new JButton("vs Computer");
+        startAIButton.setSize(130, 30);
+        startAIButton.setLocation(600, 20);
+        startAIButton.setFont(new Font(startAIButton.getFont().getName(), Font.BOLD, 15));
+        startAIButton.addActionListener(new StartButtonListener(this, false));
+        this.add(startAIButton);
+        ////////////////////////////////////////////////////////
+        startPlayerButton = new JButton("vs Player");
+        startPlayerButton.setSize(130, 30);
+        startPlayerButton.setLocation(600, 60);
+        startPlayerButton.setFont(new Font(startPlayerButton.getFont().getName(), Font.BOLD, 15));
+        startPlayerButton.addActionListener(new StartButtonListener(this, true));
+        this.add(startPlayerButton);
         ////////////////////////////////////////////////////////
         quitButton = new JButton("Quit");
         quitButton.setSize(130, 30);
-        quitButton.setLocation(600, 80);
+        quitButton.setLocation(600, 100);
         quitButton.setFont(new Font(quitButton.getFont().getName(), Font.BOLD, 15));
         quitButton.addActionListener(new ActionListener() {
         	@Override
@@ -122,23 +169,29 @@ public class MainFrame extends JFrame{
         this.add(quitButton);
         ////////////////////////////////////////////////////////
         this.setVisible(true);
-		game = new Game(this, this.fieldPanel);
-		game.parentFrame = this; // connect frame and game instance
-		fieldPanel.game = game;
      
 	}
 	public void updateInit() {
 		// initialize Field GUI according to game variables
-		this.initDeckTable();
+		initDeckTable(true);
 		fieldPanel.init(game.round);
 	}
 
-	public void initDeckTable() {
+	public void initDeckTable(boolean myTurn) {
 		deckTableModel.setRowCount(0);
-		for(int i=0; i<game.myDeck.size(); ++i) {
-			Card card = game.myDeck.at(i);
-			deckTableModel.addRow(new Object[]{card.getName(), card.getHp(), card.getAtk()});
+		if(myTurn) {
+			for(int i=0; i<game.myDeck.size(); ++i) {
+				Card card = game.myDeck.at(i);
+				deckTableModel.addRow(new Object[]{card.getName(), card.getHp(), card.getAtk()});
+			}			
 		}
+		else {
+			for(int i=0; i<game.enemyDeck.size(); ++i) {
+				Card card = game.enemyDeck.at(i);
+				deckTableModel.addRow(new Object[]{card.getName(), card.getHp(), card.getAtk()});
+			}			
+		}
+
 	}
 	
 	public void updateDisplay(String str) {
@@ -156,6 +209,10 @@ public class MainFrame extends JFrame{
 			return this.deckTable.getSelectedRow();
 	}
 	public void gameEnded() {
-		this.startButton.setEnabled(true);
+		this.startAIButton.setEnabled(true);
+		this.startPlayerButton.setEnabled(true);
+	}
+	public void printCardInfo(String str) {
+		this.cardExplainArea.setText(str);
 	}
 }

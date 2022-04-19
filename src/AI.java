@@ -53,9 +53,7 @@ public class AI {
 		this.addFieldCard(dstRow, dstCol);
 	}
 	
-	public boolean haveSpaceToPut() {
-		return this.field.get(0, this.game.round) == null || this.field.get(1, this.game.round+1) == null;
-	}
+
 	
 	public boolean percent(int p) { // p percent probability
 		return random.nextInt(100) < p;
@@ -72,7 +70,7 @@ public class AI {
 			this.move();
 		}
 		else {
-			if(this.haveSpaceToPut()) {
+			if(this.game.haveSpaceToPut(false)) {
 				if(this.percent(50) || this.fieldCards.size() == 0) { // 
 					this.putCard();
 				}
@@ -81,6 +79,7 @@ public class AI {
 				}
 			}
 			else { // Can't put a card
+				// Bug
 				this.move();
 			}
 		}
@@ -88,11 +87,21 @@ public class AI {
 	
 	public void putCard() {
 		int deckIndex = random.nextInt(AIdeck.size());
-		if(this.percent(50) && this.field.get(0, this.game.round) == null) {
-			this.game.putCard(0, this.game.round, deckIndex, false);
+		if(this.percent(50)) {
+			if(this.field.get(0, this.game.round) == null) {
+				this.game.putCard(0, this.game.round, deckIndex, false);
+			}
+			else {
+				this.game.putCard(1, this.game.round+1, deckIndex, false);
+			}
 		}
 		else {
-			this.game.putCard(1, this.game.round+1, deckIndex, false);
+			if(this.field.get(1, this.game.round+1) == null) {
+				this.game.putCard(1, this.game.round+1, deckIndex, false);
+			}
+			else {
+				this.game.putCard(0, this.game.round, deckIndex, false);
+			}			
 		}
 	}
 	
@@ -130,6 +139,5 @@ public class AI {
 				}
 			}
 		}
-		
 	}
 }

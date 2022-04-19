@@ -39,10 +39,17 @@ public class Card {
 	public boolean isMovable(int atkRow, int atkCol, int hitRow, int hitCol) {
 		return this.champion.isMovable(atkRow, atkCol, hitRow, hitCol);
 	}
+	public boolean isAttackable(int atkRow, int atkCol, int hitRow, int hitCol) {
+		return this.champion.isAttackable(atkRow, atkCol, hitRow, hitCol);
+	}
 	public boolean isPlayerCard() {
 		return player;
 	}
 	public boolean isNexus() {
 		return nexus;
 	}
+	public String getCardInfo() {
+		return Champion.exp[this.getCardClass().getIndex()];
+	}
+
 }

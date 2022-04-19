@@ -19,8 +19,18 @@ public class Champion {
 			return this.index;
 		}
 	}
-	public static int HP[] = {15, 1, 2, 1, 1, 1, 1};
+	public static int HP[] = {10, 1, 2, 1, 1, 1, 1};
 	public static int ATK[] = {0, 2, 1, 1, 1, 1, 1};
+	public static String exp[] = {
+			"Dummy", 
+			"Valorous warrior can give more damage to the enemy.",
+			"Stalwart tank can take more damage from the enemy.",
+			"Archer have a long range distance. He can attack enemies diagonally.",
+			"Knight is very agile. He can move two blocks at once.",
+			"Jumpking steps on the enemy. He can move two blocks straight. If he kills the enemy, he can move to the place where enemy was. Or, he dies.",
+			"Bomber gives his life for the victory. If he dies, he gives damage everything around him."
+			};
+	
 	private Class cardClass;
 	public Champion(Class cardClass) {
 		this.cardClass = cardClass;
@@ -28,43 +38,84 @@ public class Champion {
 	public Class getCardClass() {
 		return this.cardClass;
 	}
-	public boolean isAdjacent(int atkRow, int atkCol, int hitRow, int hitCol, int maxDistance) {
-		return Math.abs(atkRow-hitRow) <= maxDistance && atkCol == hitCol || atkRow == hitRow && Math.abs(atkCol-hitCol) <= maxDistance;
+	public boolean isAdjacent(int atkRow, int atkCol, int hitRow, int hitCol, int minDistance, int maxDistance) {
+		return minDistance <= Math.abs(atkRow-hitRow) && Math.abs(atkRow-hitRow) <= maxDistance && atkCol == hitCol 
+				|| atkRow == hitRow && minDistance <= Math.abs(atkCol-hitCol) && Math.abs(atkCol-hitCol) <= maxDistance;
 	}
-	public boolean isDiagonal(int atkRow, int atkCol, int hitRow, int hitCol, int maxDistance) {
-		return Math.abs(atkRow-hitRow) <= maxDistance && Math.abs(atkCol-hitCol) <= maxDistance;
+	public boolean isDiagonal(int atkRow, int atkCol, int hitRow, int hitCol, int minDistance, int maxDistance) {
+		return minDistance <= Math.abs(atkRow-hitRow) && Math.abs(atkRow-hitRow) <= maxDistance 
+				&& minDistance <= Math.abs(atkCol-hitCol) && Math.abs(atkCol-hitCol) <= maxDistance;
 	}
 	public boolean isMovable(int atkRow, int atkCol, int hitRow, int hitCol) {
 		switch(this.cardClass) {
 		case NEXUS:
 			return false;
 		case WARRIOR:
-			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1))
+			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1, 1))
 				return true;
 			else
 				return false;
 		case TANK:
-			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1))
+			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1, 1))
 				return true;
 			else
 				return false;
 		case ARCHER:
-			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1) || isDiagonal(atkRow, atkCol, hitRow, hitCol, 1))
+			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1, 1))
 				return true;
 			else
 				return false;
 		case KNIGHT:
-			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 2) || isDiagonal(atkRow, atkCol, hitRow, hitCol, 1))
+			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1, 2) || isDiagonal(atkRow, atkCol, hitRow, hitCol, 1, 1))
 				return true;
 			else
 				return false;
 		case JUMPKING:
-			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 2))
+			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 2, 2))
 				return true;
 			else
 				return false;
 		case BOMBER:
-			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1))
+			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1, 1))
+				return true;
+			else
+				return false;
+		default:
+			return false;
+		}
+	}
+
+	public boolean isAttackable(int atkRow, int atkCol, int hitRow, int hitCol) {
+		switch(this.cardClass) {
+		case NEXUS:
+			return false;
+		case WARRIOR:
+			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1, 1))
+				return true;
+			else
+				return false;
+		case TANK:
+			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1, 1))
+				return true;
+			else
+				return false;
+		case ARCHER:
+			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1, 1) || isDiagonal(atkRow, atkCol, hitRow, hitCol, 1, 1))
+				return true;
+			else
+				return false;
+		case KNIGHT:
+			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1, 2) || isDiagonal(atkRow, atkCol, hitRow, hitCol, 1, 1))
+				return true;
+			else
+				return false;
+		case JUMPKING:
+			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 2, 2))
+				return true;
+			else
+				return false;
+		case BOMBER:
+			if(isAdjacent(atkRow, atkCol, hitRow, hitCol, 1, 1))
 				return true;
 			else
 				return false;

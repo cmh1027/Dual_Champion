@@ -4,7 +4,9 @@ public class Game extends Thread {
 	private int myHp, enemyHp;
 	private int turnCount;
 	private int myCardCount, enemyCardCount;
+	private int myFieldCardCount, enemyFieldCardCount;
 	private AI ai;
+	private boolean withPlayer;
 	public Field field;
 	public MainFrame parentFrame;
 	public FieldPanel fieldPanel;
@@ -12,7 +14,7 @@ public class Game extends Thread {
 	public volatile boolean waiting;
 	private final int MAXROUND = 7;
 
-	public Game(MainFrame parent, FieldPanel panel){
+	public Game(MainFrame parent, FieldPanel panel, boolean withPlayer){
 		myDeck = new Deck();
 		enemyDeck = new Deck();
 		field = new Field();
@@ -20,6 +22,7 @@ public class Game extends Thread {
 		waiting = false;
 		parentFrame = parent;
 		fieldPanel = panel;
+		this.withPlayer = withPlayer;
 	}
 	public int getMyHp() {
 		return this.myHp;
@@ -32,10 +35,10 @@ public class Game extends Thread {
 		for(round=1; round<=MAXROUND; ++round) {
 			this.init();
 			this.myTurn = true; // Player is first
-			while(myHp > 0 && enemyHp > 0 && !haveNoCard(true) && !haveNoCard(false)) {
+			while(myHp > 0 && enemyHp > 0 && !haveNoCard(true) && !haveNoCard(false) && !isBlockedByEnemy(true) && !isBlockedByEnemy(false)) {
 				this.turn();
 			}
-			if(myHp <= 0 || haveNoCard(true)) {
+			if(myHp <= 0 || haveNoCard(true) || isBlockedByEnemy(true)) {
 				lose();
 			}
 			else {
@@ -46,7 +49,7 @@ public class Game extends Thread {
 	}
 
 	public void turn(){
-		if(this.myTurn) {
+		if(isPlayerTurn()) {
 			parentFrame.updateDisplay(String.format("Round %d-%d / Player's Turn", this.round, this.turnCount));
 			this.waiting = true;
 			while(this.waiting) {
@@ -55,13 +58,22 @@ public class Game extends Thread {
 		}
 		else {
 			parentFrame.updateDisplay(String.format("Round %d-%d / Opponent's Turn", this.round, this.turnCount));
-			try {
-				Thread.sleep(1000);
+			if(isEnemyAI()) {
+				try {
+					Thread.sleep(1000);
+				}
+				catch(Exception e) {
+					e.printStackTrace();
+				}
+				ai.nextAction();				
 			}
-			catch(Exception e) {
-				e.printStackTrace();
+			else {
+				this.waiting = true;
+				while(this.waiting) {
+					;
+				}				
 			}
-			ai.nextAction();
+
 		}
 		this.myTurn = !this.myTurn;
 		this.turnCount++;
@@ -81,6 +93,10 @@ public class Game extends Thread {
 		enemyHp = Champion.HP[Champion.Class.NEXUS.getIndex()];
 		field.init(2+round, 2+round);
 		turnCount = 1;
+		myCardCount = 0;
+		myFieldCardCount = 0;
+		enemyCardCount = 0;
+		enemyFieldCardCount = 0;
 		this.deckInit();
 		this.nexusInit();
 		this.parentFrame.updateInit();
@@ -107,14 +123,7 @@ public class Game extends Thread {
 
 	public void putDeckCard(Champion.Class cardClass, boolean isPlayer, int count) {
 		for(int i=0; i<count; ++i) {
-			if(isPlayer) {
-				this.myCardCount += 1;
-				myDeck.putItem(new Card(cardClass, true));
-			}
-			else {
-				this.enemyCardCount += 1;
-				enemyDeck.putItem(new Card(cardClass, false));
-			}			
+			this.putDeckCard(cardClass, isPlayer);		
 		}
 	}
 	
@@ -160,9 +169,11 @@ public class Game extends Thread {
 			if(hitCard.isDead()) {
 				if(hitCard.isPlayerCard()) {
 					this.myCardCount -= 1;
+					this.myFieldCardCount -= 1;
 				}
 				else {
 					this.enemyCardCount -= 1;
+					this.enemyFieldCardCount -= 1;
 					this.ai.removeFieldCard(hitRow, hitCol);
 				}
 				if(hitCard.getCardClass() == Champion.Class.BOMBER) {
@@ -177,9 +188,11 @@ public class Game extends Thread {
 				if(attackCard.getCardClass() == Champion.Class.JUMPKING) {
 					if(attackCard.isPlayerCard()) {
 						this.myCardCount -= 1;
+						this.myFieldCardCount -= 1;
 					}
 					else {
 						this.enemyCardCount -= 1;
+						this.enemyFieldCardCount -= 1;
 						this.ai.removeFieldCard(hitRow, hitCol);					
 					}
 					field.remove(atkRow, atkCol);
@@ -201,7 +214,6 @@ public class Game extends Thread {
 	}
 	
 	public void bomberSuicide(int row, int col) {
-		Card attackCard = field.get(row, col);
 		Card hitCard;
 		for(int i=-1; i<=1; i=i+2) {
 			if(this.isValidCoord(row+i, col) && (hitCard = field.get(row+i, col)) != null) {
@@ -210,7 +222,6 @@ public class Game extends Thread {
 		}
 		for(int i=-1; i<=1; i=i+2) {
 			if(this.isValidCoord(row, col+i) && (hitCard = field.get(row, col+i)) != null) {
-				hitCard.getDamage(attackCard.getAtk());
 				this.attack(row, col, row, col+i);	
 			}
 		}
@@ -228,11 +239,14 @@ public class Game extends Thread {
 
 	public void putCard(int row, int col, int cardIndex, boolean isPlayer) {
 		Card card;
-		if(isPlayer)
+		if(isPlayer) {
 			card = this.myDeck.pop(cardIndex);
+			this.myFieldCardCount += 1;
+		}
 		else {
 			card = this.enemyDeck.pop(cardIndex);
 			this.ai.addFieldCard(row, col);
+			this.enemyFieldCardCount += 1;
 		}
 		this.field.set(row, col, card);
 		this.fieldPanel.updateCell(row, col);
@@ -241,7 +255,13 @@ public class Game extends Thread {
 	
 
 	public void win() {
-		parentFrame.updateDisplay("You Win! Ready for the next battle");
+		if(this.round == this.MAXROUND) {
+			parentFrame.updateDisplay("You Win! Thanks for playing");
+		}
+		else {
+			parentFrame.updateDisplay("You Win! Ready for the next battle");
+		}
+		
 		try {
 			Thread.sleep(3000);
 		}
@@ -250,7 +270,12 @@ public class Game extends Thread {
 		}
 	}
 	public void lose() {
-		parentFrame.updateDisplay("You Lose! Ready for the next battle");
+		if(this.round == this.MAXROUND) {
+			parentFrame.updateDisplay("You Lose! Thanks for playing");
+		}
+		else {
+			parentFrame.updateDisplay("You Lose! Ready for the next battle");
+		}
 		try {
 			Thread.sleep(3000);
 		}
@@ -260,14 +285,48 @@ public class Game extends Thread {
 	}
 	
 	public String toString() {
-		if(this.myTurn) {
+		if(isPlayerTurn()) {
 			return String.format("Round %d : My Turn", round);
 		}
 		else {
 			return String.format("Round %d : Opponent's Turn", round);
 		}
 	}
-	public boolean isFirstPosition(int row, int col) {
-		return (row == round && col == 0) || (row == round+1 && col == 1);
+	public boolean isFirstPosition(int row, int col, boolean isPlayer) {
+		if(isPlayer) {
+			return (row == round && col == 0) || (row == round+1 && col == 1);
+		}
+		else {
+			return (row == 0 && col == round) || (row == 1 && col == round+1);
+		}
+		
+	}
+	public boolean haveSpaceToPut(boolean isPlayer) {
+		if(isPlayer) {
+			return this.field.get(this.round, 0) == null || this.field.get(this.round+1, 1) == null;
+		}
+		else {
+			return this.field.get(0, this.round) == null || this.field.get(1, this.round+1) == null;
+		}
+	}
+	public boolean isBlockedByEnemy(boolean isPlayer) {
+		if(isPlayer) {
+			if(this.field.get(this.round, 0) == null ||  this.field.get(this.round+1, 1) == null)
+				return false;
+			return this.myFieldCardCount == 0 && !this.field.get(this.round, 0).isPlayerCard() && !this.field.get(this.round+1, 1).isPlayerCard();
+		}
+		else {
+			if(this.field.get(0, this.round) == null ||  this.field.get(1, this.round+1) == null)
+				return false;
+			return this.enemyFieldCardCount == 0 && this.field.get(0, this.round).isPlayerCard() && this.field.get(1, this.round+1).isPlayerCard();
+		}
+	}
+	
+	public boolean isEnemyAI() {
+		return !this.withPlayer;
+	}
+	
+	public boolean isCurrentPlayerCard(Card card) {
+		return card.isPlayerCard() && this.isPlayerTurn() || !card.isPlayerCard() && !this.isPlayerTurn();
 	}
 }
