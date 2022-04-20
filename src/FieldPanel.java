@@ -150,12 +150,13 @@ public class FieldPanel extends JPanel{
             		 }
             		 else {
             			 if(card == null && game.isFirstPosition(row, col, game.isPlayerTurn())) { // put card on the field
-            				 game.putCard(row, col, selectedDeckCardIndex, game.isPlayerTurn());
             				 if(game.isEnemyAI()) {
+            					 game.putCard(row, col, selectedDeckCardIndex, game.isPlayerTurn());
             					 parentPanel.parentFrame.updateDeckTable(selectedDeckCardIndex);
             				 }
             				 else {
             					 parentPanel.parentFrame.initDeckTable(!game.isPlayerTurn());
+            					 game.putCard(row, col, selectedDeckCardIndex, game.isPlayerTurn());
             				 }
             				 
             				 

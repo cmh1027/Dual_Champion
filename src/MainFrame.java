@@ -33,6 +33,7 @@ public class MainFrame extends JFrame{
 	private JTable deckTable; 
 	private DefaultTableModel deckTableModel;
 	private JLabel displayBoard;
+	private JLabel scoreBoard;
 	private JTextArea cardExplainArea;
 	private JButton startAIButton;
 	private JButton startPlayerButton;
@@ -104,7 +105,11 @@ public class MainFrame extends JFrame{
         ////////////////////////////////////////////////////////
         String header[]={"Card", "HP", "ATK"};
         String contents[][]={};
-        deckTableModel = new DefaultTableModel(contents, header);
+        deckTableModel = new DefaultTableModel(contents, header) {
+        	public boolean isCellEditable(int rowIndex, int mColIndex) {
+        		return false;
+        	}
+        };
         deckTable = new JTable(deckTableModel);
         JScrollPane jscp1 = new JScrollPane(deckTable);
         deckTable.setRowHeight(30);
@@ -134,13 +139,21 @@ public class MainFrame extends JFrame{
         this.add(cardExplainArea);        
         ////////////////////////////////////////////////////////
         displayBoard = new JLabel();
-        displayBoard.setSize(500, 30);
+        displayBoard.setSize(400, 30);
         displayBoard.setLocation(50, 40);
         displayBoard.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
         displayBoard.setBackground(Color.white);
-        displayBoard.setFont(new Font(displayBoard.getFont().getName(), Font.BOLD, 23));
+        displayBoard.setFont(new Font(displayBoard.getFont().getName(), Font.BOLD, 20));
+        displayBoard.setHorizontalAlignment(SwingConstants.CENTER);
         displayBoard.setOpaque(true);
         this.add(displayBoard);
+        ////////////////////////////////////////////////////////
+        scoreBoard = new JLabel("0 : 0");
+        scoreBoard.setSize(60, 30);
+        scoreBoard.setLocation(480, 40);
+        scoreBoard.setFont(new Font(scoreBoard.getFont().getName(), Font.BOLD, 30));
+        scoreBoard.setHorizontalAlignment(SwingConstants.CENTER);
+        this.add(scoreBoard);
         ////////////////////////////////////////////////////////
         startAIButton = new JButton("vs Computer");
         startAIButton.setSize(130, 30);
@@ -214,5 +227,9 @@ public class MainFrame extends JFrame{
 	}
 	public void printCardInfo(String str) {
 		this.cardExplainArea.setText(str);
+	}
+	
+	public void setScore(int myScore, int enemyScore) {
+		this.scoreBoard.setText(String.format("%d : %d", myScore, enemyScore));
 	}
 }

@@ -1,6 +1,6 @@
 public class Game extends Thread {
 	public Deck myDeck, enemyDeck;
-	public int round;
+	public int round, myScore, enemyScore;
 	private int myHp, enemyHp;
 	private int turnCount;
 	private int myCardCount, enemyCardCount;
@@ -32,6 +32,9 @@ public class Game extends Thread {
 	}
 	
 	public void run() { // Thread run method
+		this.myScore = 0;
+		this.enemyScore = 0;
+		this.parentFrame.setScore(0, 0);
 		for(round=1; round<=MAXROUND; ++round) {
 			this.init();
 			this.myTurn = true; // Player is first
@@ -39,25 +42,57 @@ public class Game extends Thread {
 				this.turn();
 			}
 			if(myHp <= 0 || haveNoCard(true) || isBlockedByEnemy(true)) {
-				lose();
+				loseRound();
 			}
 			else {
-				win();
+				winRound();
 			}
+			this.parentFrame.setScore(this.myScore, this.enemyScore);
+			if(this.myScore > this.MAXROUND / 2 || this.enemyScore > this.MAXROUND / 2) {
+				break;
+			}
+			else {
+				try {
+					Thread.sleep(3000);
+				}
+				catch(Exception e) {
+					e.printStackTrace();
+				}				
+			}
+		}
+		if(this.myScore > this.enemyScore) {
+			this.winMatch();
+		}
+		else if(this.myScore < this.enemyScore) {
+			this.loseMatch();
+		}
+		else {
+			this.drawMatch();
 		}
 		this.parentFrame.gameEnded();
 	}
 
 	public void turn(){
 		if(isPlayerTurn()) {
-			parentFrame.updateDisplay(String.format("Round %d-%d / Player's Turn", this.round, this.turnCount));
+			if(this.isEnemyAI()) {
+				parentFrame.updateDisplay(String.format("Round %d-%d / Player's Turn", this.round, this.turnCount));
+			}
+			else {
+				parentFrame.updateDisplay(String.format("Round %d-%d / Player 1's Turn", this.round, this.turnCount));
+			}
+			
 			this.waiting = true;
 			while(this.waiting) {
 				;
 			}
 		}
 		else {
-			parentFrame.updateDisplay(String.format("Round %d-%d / Opponent's Turn", this.round, this.turnCount));
+			if(this.isEnemyAI()) {
+				parentFrame.updateDisplay(String.format("Round %d-%d / Opponent's Turn", this.round, this.turnCount));
+			}
+			else {
+				parentFrame.updateDisplay(String.format("Round %d-%d / Player 2's Turn", this.round, this.turnCount));
+			}
 			if(isEnemyAI()) {
 				try {
 					Thread.sleep(1000);
@@ -245,7 +280,9 @@ public class Game extends Thread {
 		}
 		else {
 			card = this.enemyDeck.pop(cardIndex);
-			this.ai.addFieldCard(row, col);
+			if(this.isEnemyAI()) {
+				this.ai.addFieldCard(row, col);
+			}
 			this.enemyFieldCardCount += 1;
 		}
 		this.field.set(row, col, card);
@@ -254,35 +291,49 @@ public class Game extends Thread {
 	}
 	
 
-	public void win() {
-		if(this.round == this.MAXROUND) {
-			parentFrame.updateDisplay("You Win! Thanks for playing");
-		}
-		else {
+	public void winRound() {
+		this.myScore += 1;
+		if(this.isEnemyAI()) {
 			parentFrame.updateDisplay("You Win! Ready for the next battle");
 		}
-		
-		try {
-			Thread.sleep(3000);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-		}
-	}
-	public void lose() {
-		if(this.round == this.MAXROUND) {
-			parentFrame.updateDisplay("You Lose! Thanks for playing");
-		}
 		else {
+			parentFrame.updateDisplay("Player 1 Win! Ready for the next battle");
+		}
+		
+	}
+	
+	public void loseRound() {
+		this.enemyScore += 1;
+		if(this.isEnemyAI()) {
 			parentFrame.updateDisplay("You Lose! Ready for the next battle");
 		}
-		try {
-			Thread.sleep(3000);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
+		else {
+			parentFrame.updateDisplay("Player 2 Win! Ready for the next battle");
 		}
 	}
+	
+	public void winMatch() {
+		if(this.isEnemyAI()) {
+			parentFrame.updateDisplay("You are the winner of the match!");
+		}
+		else {
+			parentFrame.updateDisplay("Player 1 is the winner of the match!");
+		}
+	}
+	
+	public void loseMatch() {
+		if(this.isEnemyAI()) {
+			parentFrame.updateDisplay("Computer is the winner of the match!");
+		}
+		else {
+			parentFrame.updateDisplay("Player 2 is the winner of the match!");
+		}
+		
+	}
+	public void drawMatch() {
+		parentFrame.updateDisplay("DRAW!");
+	}
+	
 	
 	public String toString() {
 		if(isPlayerTurn()) {
